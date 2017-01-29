@@ -1,0 +1,85 @@
+package storage
+
+import (
+	"context"
+	"io/ioutil"
+	"os"
+
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+
+	googleStorage "cloud.google.com/go/storage"
+)
+
+// Storage is the minimal interface for a cloud storage layer.
+type Storage interface {
+	// Upload a file under the given name, with the provided contents.
+	Upload(ctx context.Context, name string, contents []byte) error
+	// Download a file with the given name.
+	Download(ctx context.Context, name string) ([]byte, error)
+	// List contents of the bucket.
+	List(ctx context.Context, prefix string) ([]string, error)
+}
+
+// New creates a new Google Cloud Storage client.
+func New(ctx context.Context, filename, bucket string) (Storage, error) {
+	filename = os.ExpandEnv(filename)
+	s, err := googleStorage.NewClient(ctx, option.WithServiceAccountFile(filename))
+	if err != nil {
+		return nil, err
+	}
+	b := s.Bucket(bucket)
+	return &storage{
+		client: s,
+		bucket: b,
+	}, nil
+}
+
+type storage struct {
+	client *googleStorage.Client
+	bucket *googleStorage.BucketHandle
+}
+
+func (s *storage) Upload(ctx context.Context, name string, contents []byte) error {
+	obj := s.bucket.Object(name)
+	w := obj.NewWriter(ctx)
+	if _, err := w.Write(contents); err != nil {
+		return err
+	}
+	return w.Close()
+}
+
+func (s *storage) Download(ctx context.Context, name string) ([]byte, error) {
+	obj := s.bucket.Object(name)
+	r, err := obj.NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return data, r.Close()
+}
+
+func (s *storage) List(ctx context.Context, prefix string) ([]string, error) {
+	var q *googleStorage.Query
+	if prefix != "" {
+		q = &googleStorage.Query{
+			Prefix: prefix,
+		}
+	}
+	var res []string
+	it := s.bucket.Objects(ctx, q)
+	for {
+		objattr, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, objattr.Name)
+	}
+	return res, nil
+}

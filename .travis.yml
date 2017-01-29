@@ -4,8 +4,9 @@ go:
 before_install:
 - go get github.com/mattn/goveralls
 - go get golang.org/x/tools/cmd/cover
+- go get github.com/modocache/gover
 script:
-- $HOME/gopath/bin/goveralls -service=travis-ci
+- bash coverage.sh travis-ci
 env:
   global:
     secure: r2HX0+K9m38nHMCnDvDwTd/FE7WhIaWXe4abJZdey7uoz4w9pj8j7fDE5XZpEh3zT4n0CYEtEjZofNLOlmnfJL0WIDoZEBj93JL5puubXMwsRu+wumJpyl/cIN/WqLrJH3FXMRluBbPEKdoG0UcElAAiNKd/6c50UiXZfv7bUImG8i0cjd0FzWS74eqjgHoy8p5Z5vkx6QO5YKUmQgfan1ZA8Fo/PbcLydYSkg5fMFtLRh8gjt5KtuewuhylOuMCDuXeZJ9gxiASN+FzRW7RitsZxZAlBsm6ePeffJ/ErvsSnBYp4zM5quZhkap89fMET1e2M4goYIWsoW+7Bx0NUPGfVGKgDYucxR0k7PxC0vovwXX73o7akCapHFHJ7LCnNl0mIrvZVvoQztyi7c0svq/wJJ4l3cOsl7F/2A+86THqwDFnFOe+QCztJiM5jYg2oAAjyMk8Ob4yzKN/Pi095NFCg+wJz1rb3GzZxIbIIHG+ZSEpHfsd7P85eyBJUretzAgqf6pXScARs97dzdGE88byPsQxCDcDQZOe3naNtiWxKAUcWO7mST87ec/R0K7k5QCo/XaD6tPRisawvE8C3ibZuHtaDIbnHsgkAohu3HOcyE9A+V1qTWicH/GPK3RhBwqqBQk6f1TdVQaIs0OXooA1N8QYOnZMwZMFMdnc2gY=

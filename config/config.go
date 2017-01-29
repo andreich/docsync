@@ -25,16 +25,6 @@ type Duration struct {
 	time.Duration
 }
 
-// MakeDuration conveniently transforms a time.Duration to config.Duration.
-func MakeDuration(d time.Duration) Duration {
-	return Duration{d}
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-func (d Duration) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + d.String() + `"`), nil
-}
-
 // UnmarshalJSON implements the json.Unmarshaler interface. The duration is
 // expected to be a quoted-string of a duration in the format accepted by
 // time.ParseDuration.

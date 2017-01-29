@@ -5,18 +5,18 @@ import (
 	"testing"
 )
 
+func fakeReadFile(data string) func(string) ([]byte, error) {
+	return func(filename string) ([]byte, error) {
+		if data == "error" {
+			return nil, errors.New("readFile error")
+		}
+		return []byte(data), nil
+	}
+}
+
 func TestParseSyncConfiguration(t *testing.T) {
 	oldReadFile := readFile
 	defer func() { readFile = oldReadFile }()
-
-	fakeReadFile := func(data string) func(string) ([]byte, error) {
-		return func(filename string) ([]byte, error) {
-			if data == "error" {
-				return nil, errors.New("readFile error")
-			}
-			return []byte(data), nil
-		}
-	}
 
 	for _, test := range []struct {
 		desc   string
@@ -36,6 +36,14 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"\x11\x22\x33\x44",
 		true,
 	}, {
+		"empty directory to watch",
+		`
+{
+	"dirs": {}
+}
+		`,
+		true,
+	}, {
 		"point to non-existing directory",
 		`
 {
@@ -52,6 +60,28 @@ func TestParseSyncConfiguration(t *testing.T) {
   "dirs": {
 		"/dev/random": "sample/remote/dir"
 	}
+}
+		`,
+		true,
+	}, {
+		"invalid interval - parsing as duration",
+		`
+{
+  "dirs": {
+  	".": "sample/remote/dir"
+  },
+  "interval": "x123y"
+}
+		`,
+		true,
+	}, {
+		"invalid interval - parsing",
+		`
+{
+	"dirs": {
+		".": "sample/remote/dir"
+	},
+	"interval": "\x10\x20\x30"
 }
 		`,
 		true,
@@ -172,6 +202,68 @@ func TestParseSyncConfiguration(t *testing.T) {
 		t.Logf("%s: %v", test.desc, err)
 		if test.err != (err != nil) {
 			t.Errorf("%s: Parse() want error %v, got (%+v, %v)", test.desc, test.err, cfg, err)
+		}
+	}
+}
+
+func TestParseOtherConfiguration(t *testing.T) {
+	oldReadFile := readFile
+	defer func() { readFile = oldReadFile }()
+
+	for _, test := range []struct {
+		desc   string
+		cfg    C
+		config string
+		err    bool
+	}{{
+		"invalid upload configuration",
+		&Upload{},
+		`{}`,
+		true,
+	}, {
+		"valid upload configuration",
+		&Upload{},
+		`
+{
+	"aes_passphrase": "Sample passphrase",
+	"credentials_file": "sample.json"
+}
+`,
+		false,
+	}, {
+		"invalid encryption configuration",
+		&Encryption{},
+		`{}`,
+		true,
+	}, {
+		"valid encryption configuration",
+		&Encryption{},
+		`
+{
+	"aes_passphrase": "Sample passphrase"
+}
+`,
+		false,
+	}, {
+		"invalid storage configuration",
+		&Storage{},
+		`{}`,
+		true,
+	}, {
+		"valid storage configuration",
+		&Storage{},
+		`
+{
+	"credentials_file": "creds.json"
+}
+`,
+		false,
+	}} {
+		readFile = fakeReadFile(test.config)
+		err := test.cfg.Parse(test.desc)
+		t.Logf("%s: %v", test.desc, err)
+		if test.err != (err != nil) {
+			t.Errorf("%s: Parse() want error %v, got (%+v, %v)", test.desc, test.err, test.cfg, err)
 		}
 	}
 }

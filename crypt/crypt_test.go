@@ -24,22 +24,24 @@ func TestEncryptDecrypt(t *testing.T) {
 	for i := 8; i < 18; i++ {
 		tests = append(tests, int(math.Pow(2, float64(i))))
 	}
-	e, err := New("this is a passphrase")
-	if err != nil {
-		t.Fatalf("could not initialize encryption: %v", err)
-	}
-	for _, count := range tests {
-		src := getBytes(count)
-		var dst []byte
-		if dst, err = e.Encrypt(src); err != nil {
-			t.Errorf("encrypting %d bytes: %v", count, err)
+	for k := 8; k < 32; k += 4 {
+		e, err := New(fmt.Sprintf("this is a passphrase %d", k))
+		if err != nil {
+			t.Fatalf("could not initialize encryption: %v", err)
 		}
-		var dsrc []byte
-		if dsrc, err = e.Decrypt(dst); err != nil {
-			t.Errorf("decrypting %d bytes: %v", count, err)
-		}
-		if !reflect.DeepEqual(src, dsrc) {
-			t.Errorf("decryption mismatch for %d bytes:\n% x\n% x", count, src, dsrc)
+		for _, count := range tests {
+			src := getBytes(count)
+			var dst []byte
+			if dst, err = e.Encrypt(src); err != nil {
+				t.Errorf("encrypting %d bytes: %v", count, err)
+			}
+			var dsrc []byte
+			if dsrc, err = e.Decrypt(dst); err != nil {
+				t.Errorf("decrypting %d bytes: %v", count, err)
+			}
+			if !reflect.DeepEqual(src, dsrc) {
+				t.Errorf("decryption mismatch for %d bytes:\n% x\n% x", count, src, dsrc)
+			}
 		}
 	}
 }

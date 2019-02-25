@@ -21,26 +21,28 @@ type Storage interface {
 	List(ctx context.Context, prefix string) ([]string, error)
 }
 
+var newClient = googleStorage.NewClient
+
 // New creates a new Google Cloud Storage client.
 func New(ctx context.Context, filename, bucket string) (Storage, error) {
 	filename = os.ExpandEnv(filename)
-	s, err := googleStorage.NewClient(ctx, option.WithServiceAccountFile(filename))
+	s, err := newClient(ctx, option.WithCredentialsFile(filename))
 	if err != nil {
 		return nil, err
 	}
 	b := s.Bucket(bucket)
-	return &storage{
+	return &storageImpl{
 		client: s,
 		bucket: b,
 	}, nil
 }
 
-type storage struct {
+type storageImpl struct {
 	client *googleStorage.Client
 	bucket *googleStorage.BucketHandle
 }
 
-func (s *storage) Upload(ctx context.Context, name string, contents []byte) error {
+func (s *storageImpl) Upload(ctx context.Context, name string, contents []byte) error {
 	obj := s.bucket.Object(name)
 	w := obj.NewWriter(ctx)
 	if _, err := w.Write(contents); err != nil {
@@ -49,7 +51,7 @@ func (s *storage) Upload(ctx context.Context, name string, contents []byte) erro
 	return w.Close()
 }
 
-func (s *storage) Download(ctx context.Context, name string) ([]byte, error) {
+func (s *storageImpl) Download(ctx context.Context, name string) ([]byte, error) {
 	obj := s.bucket.Object(name)
 	r, err := obj.NewReader(ctx)
 	if err != nil {
@@ -62,7 +64,7 @@ func (s *storage) Download(ctx context.Context, name string) ([]byte, error) {
 	return data, r.Close()
 }
 
-func (s *storage) List(ctx context.Context, prefix string) ([]string, error) {
+func (s *storageImpl) List(ctx context.Context, prefix string) ([]string, error) {
 	var q *googleStorage.Query
 	if prefix != "" {
 		q = &googleStorage.Query{

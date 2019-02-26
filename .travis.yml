@@ -3,7 +3,7 @@ go:
 - '1.11'
 before_install:
 - openssl aes-256-cbc -K $encrypted_0b0cf11847e2_key -iv $encrypted_0b0cf11847e2_iv
-  -in creds.json.enc -out creds.json -d
+  -in storage/creds.json.enc -out storage/creds.json -d
 - go get github.com/mattn/goveralls
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/modocache/gover

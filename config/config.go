@@ -67,8 +67,8 @@ type Upload struct {
 
 // Storage is the minumum configuration to connect to the cloud.
 type Storage struct {
-	CredentialsFile string `json:"credentials_file"`
-	BucketName      string `json:"bucket_name"`
+	Credentials map[string]string `json:"credentials"`
+	BucketName  string            `json:"bucket_name"`
 }
 
 // C provides the methods to be implemented by all configurations.
@@ -92,8 +92,13 @@ func (c *Encryption) Validate() error {
 
 // Validate satisfies interface C.
 func (c *Storage) Validate() error {
-	if c.CredentialsFile == "" {
-		return errors.New("credentials_file empty")
+	if len(c.Credentials) == 0 {
+		return errors.New("credentials empty")
+	}
+	for _, key := range []string{"type", "project_id", "private_key"} {
+		if _, found := c.Credentials[key]; !found {
+			return fmt.Errorf("key %q missing from credentials", key)
+		}
 	}
 	return nil
 }

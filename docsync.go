@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -54,7 +55,11 @@ func main() {
 	}
 
 	ctx := context.Background()
-	s, err := storage.New(ctx, cfg.CredentialsFile, cfg.BucketName)
+	creds, err := json.Marshal(cfg.Credentials)
+	if err != nil {
+		log.Fatalf("Could not serialize credentials: %v", err)
+	}
+	s, err := storage.New(ctx, cfg.BucketName, creds)
 	if err != nil {
 		log.Fatalf("Could not initialize storage: %v", err)
 	}

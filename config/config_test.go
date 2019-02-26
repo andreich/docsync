@@ -39,7 +39,7 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"empty directory to watch",
 		`
 {
-	"dirs": {}
+    "dirs": {}
 }
 		`,
 		true,
@@ -47,9 +47,9 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"point to non-existing directory",
 		`
 {
-  "dirs": {
-		"/does/not/exist/locally": "sample/remote/dir"
-	}
+    "dirs": {
+        "/does/not/exist/locally": "sample/remote/dir"
+    }
 }
  `,
 		true,
@@ -57,9 +57,9 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"point to file instead of dir",
 		`
 {
-  "dirs": {
-		"/dev/random": "sample/remote/dir"
-	}
+    "dirs": {
+        "/dev/random": "sample/remote/dir"
+    }
 }
 		`,
 		true,
@@ -67,10 +67,10 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"invalid interval - parsing as duration",
 		`
 {
-  "dirs": {
-  	".": "sample/remote/dir"
-  },
-  "interval": "x123y"
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "x123y"
 }
 		`,
 		true,
@@ -89,10 +89,10 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"interval too small",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-	"interval": "0s"
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "0s"
 }
 `,
 		true,
@@ -100,10 +100,10 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"manifest file missing",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-	"interval": "1h"
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "1h"
 }
 `,
 		true,
@@ -111,11 +111,11 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"remote manifest file missing",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-	"interval": "1h",
-	"manifest_file": "/tmp/manifest"
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest"
 }
 `,
 		true,
@@ -123,26 +123,46 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"aes_passphrase missing",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-	"interval": "1h",
-	"manifest_file": "/tmp/manifest",
-	"remote_manifest_file": "remote/manifest"
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "remote/manifest"
 }
 `,
 		true,
 	}, {
-		"credentials_file missing",
+		"credentials missing",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-	"interval": "1h",
-	"manifest_file": "/tmp/manifest",
-	"remote_manifest_file": "remote/manifest",
-	"aes_passphrase": "sample passphrase"
+    "aes_passphrase": "sample passphrase",
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "remote/manifest"
+}
+`,
+		true,
+	}, {
+		"credentials key missing",
+		`
+{
+    "aes_passphrase": "sample passphrase",
+    "credentials": {
+        "missing_private_key": "not here",
+        "project_id": "present",
+        "some-key": "not-checked",
+        "type": "present"
+    },
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "remote/manifest"
 }
 `,
 		true,
@@ -150,16 +170,25 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"simple include/exclude regexps",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-  "interval": "1h",
-  "manifest_file": "/tmp/manifest",
-  "remote_manifest_file": "manifest",
-  "aes_passphrase": "This is safe",
-  "credentials_file": "writer.json",
-  "include": [".*\\.go"],
-  "exclude": [".*\\.swp", "^\\..*"]
+    "aes_passphrase": "This is safe",
+    "credentials": {
+        "private_key": "key",
+        "project_id": "project",
+        "type": "service_account"
+    },
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "exclude": [
+        ".*\\.swp",
+        "^\\..*"
+    ],
+    "include": [
+        ".*\\.go"
+    ],
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "manifest"
 }
 `,
 		false,
@@ -167,15 +196,21 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"include regexp invalid",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-  "interval": "1h",
-  "manifest_file": "/tmp/manifest",
-  "remote_manifest_file": "manifest",
-  "aes_passphrase": "This is safe",
-  "credentials_file": "writer.json",
-  "include": ["*.go"]
+    "aes_passphrase": "This is safe",
+    "credentials": {
+        "private_key": "key",
+        "project_id": "project",
+        "type": "service_account"
+    },
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "include": [
+        "*.go"
+    ],
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "manifest"
 }
 		`,
 		true,
@@ -183,15 +218,21 @@ func TestParseSyncConfiguration(t *testing.T) {
 		"exclude regexp invalid",
 		`
 {
-  "dirs": {
-		".": "sample/remote/dir"
-	},
-  "interval": "1h",
-  "manifest_file": "/tmp/manifest",
-  "remote_manifest_file": "manifest",
-  "aes_passphrase": "This is safe",
-  "credentials_file": "writer.json",
-  "exclude": ["*.go"]
+    "aes_passphrase": "This is safe",
+    "credentials": {
+        "private_key": "key",
+        "project_id": "project",
+        "type": "service_account"
+    },
+    "dirs": {
+        ".": "sample/remote/dir"
+    },
+    "exclude": [
+        "*.go"
+    ],
+    "interval": "1h",
+    "manifest_file": "/tmp/manifest",
+    "remote_manifest_file": "manifest"
 }
 		`,
 		true,
@@ -199,7 +240,7 @@ func TestParseSyncConfiguration(t *testing.T) {
 		readFile = fakeReadFile(test.config)
 		cfg := &Sync{}
 		err := cfg.Parse(test.desc)
-		t.Logf("%s: %v", test.desc, err)
+		// t.Logf("%s: %v", test.desc, err)
 		if test.err != (err != nil) {
 			t.Errorf("%s: Parse() want error %v, got (%+v, %v)", test.desc, test.err, cfg, err)
 		}
@@ -225,8 +266,12 @@ func TestParseOtherConfiguration(t *testing.T) {
 		&Upload{},
 		`
 {
-	"aes_passphrase": "Sample passphrase",
-	"credentials_file": "sample.json"
+    "aes_passphrase": "Sample passphrase",
+    "credentials": {
+        "private_key": "key",
+        "project_id": "project",
+        "type": "service_account"
+    }
 }
 `,
 		false,
@@ -240,7 +285,7 @@ func TestParseOtherConfiguration(t *testing.T) {
 		&Encryption{},
 		`
 {
-	"aes_passphrase": "Sample passphrase"
+    "aes_passphrase": "Sample passphrase"
 }
 `,
 		false,
@@ -254,14 +299,18 @@ func TestParseOtherConfiguration(t *testing.T) {
 		&Storage{},
 		`
 {
-	"credentials_file": "creds.json"
+    "credentials": {
+        "private_key": "key",
+        "project_id": "project",
+        "type": "service_account"
+    }
 }
 `,
 		false,
 	}} {
 		readFile = fakeReadFile(test.config)
 		err := test.cfg.Parse(test.desc)
-		t.Logf("%s: %v", test.desc, err)
+		// t.Logf("%s: %v", test.desc, err)
 		if test.err != (err != nil) {
 			t.Errorf("%s: Parse() want error %v, got (%+v, %v)", test.desc, test.err, test.cfg, err)
 		}

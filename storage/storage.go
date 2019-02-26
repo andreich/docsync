@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"io/ioutil"
-	"os"
 
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -24,9 +23,8 @@ type Storage interface {
 var newClient = googleStorage.NewClient
 
 // New creates a new Google Cloud Storage client.
-func New(ctx context.Context, filename, bucket string) (Storage, error) {
-	filename = os.ExpandEnv(filename)
-	s, err := newClient(ctx, option.WithCredentialsFile(filename))
+func New(ctx context.Context, bucket string, creds []byte) (Storage, error) {
+	s, err := newClient(ctx, option.WithCredentialsJSON(creds))
 	if err != nil {
 		return nil, err
 	}

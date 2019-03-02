@@ -15,8 +15,8 @@ func fakeReadFile(data string) func(string) ([]byte, error) {
 }
 
 func TestParseSyncConfiguration(t *testing.T) {
-	oldReadFile := readFile
-	defer func() { readFile = oldReadFile }()
+	oldReadFile := ReadFile
+	defer func() { ReadFile = oldReadFile }()
 
 	for _, test := range []struct {
 		desc   string
@@ -237,7 +237,7 @@ func TestParseSyncConfiguration(t *testing.T) {
 		`,
 		true,
 	}} {
-		readFile = fakeReadFile(test.config)
+		ReadFile = fakeReadFile(test.config)
 		cfg := &Sync{}
 		err := cfg.Parse(test.desc)
 		// t.Logf("%s: %v", test.desc, err)
@@ -248,8 +248,8 @@ func TestParseSyncConfiguration(t *testing.T) {
 }
 
 func TestParseOtherConfiguration(t *testing.T) {
-	oldReadFile := readFile
-	defer func() { readFile = oldReadFile }()
+	oldReadFile := ReadFile
+	defer func() { ReadFile = oldReadFile }()
 
 	for _, test := range []struct {
 		desc   string
@@ -308,7 +308,7 @@ func TestParseOtherConfiguration(t *testing.T) {
 `,
 		false,
 	}} {
-		readFile = fakeReadFile(test.config)
+		ReadFile = fakeReadFile(test.config)
 		err := test.cfg.Parse(test.desc)
 		// t.Logf("%s: %v", test.desc, err)
 		if test.err != (err != nil) {

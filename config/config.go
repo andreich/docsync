@@ -152,10 +152,13 @@ func (c *Upload) Validate() error {
 	return nil
 }
 
-var readFile = ioutil.ReadFile
+// ReadFile is the normal ioutil.ReadFile, but having it like this enables
+// testing configurations by faking the reading. See config_test.go.
+var ReadFile = ioutil.ReadFile
 
-func parse(c C, filename string) error {
-	contents, err := readFile(filename)
+// ParseConfig parses and validate a given filename in a configuration.
+func ParseConfig(c C, filename string) error {
+	contents, err := ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -170,20 +173,20 @@ func parse(c C, filename string) error {
 
 // Parse satisfies interface C.
 func (c *Encryption) Parse(filename string) error {
-	return parse(c, filename)
+	return ParseConfig(c, filename)
 }
 
 // Parse satisfies interface C.
 func (c *Storage) Parse(filename string) error {
-	return parse(c, filename)
+	return ParseConfig(c, filename)
 }
 
 // Parse satisfies interface C.
 func (c *Sync) Parse(filename string) error {
-	return parse(c, filename)
+	return ParseConfig(c, filename)
 }
 
 // Parse satisfies interface C.
 func (c *Upload) Parse(filename string) error {
-	return parse(c, filename)
+	return ParseConfig(c, filename)
 }

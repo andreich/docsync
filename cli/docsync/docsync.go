@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,11 +14,13 @@ import (
 	"github.com/andreich/docsync/config"
 	"github.com/andreich/docsync/crypt"
 	"github.com/andreich/docsync/manifest"
+	"github.com/andreich/docsync/mover"
 	"github.com/andreich/docsync/storage"
 )
 
 var (
 	configFile = flag.String("config", "$HOME/.docsync/config.json", "The configuration file to read.")
+	dryRun     = flag.Bool("dry_run", true, "If true, just print the moves, don't carry them on.")
 )
 
 func uploadContent(ctx context.Context, s storage.Storage, enc crypt.Encryption, dst string, data []byte) error {
@@ -47,7 +48,11 @@ func main() {
 	if err := cfg.Parse(*configFile); err != nil {
 		log.Fatalf("Could not load config from %q: %v", *configFile, err)
 	}
-	fmt.Printf("%+v\n", cfg)
+	cfgMover := &mover.EmbeddedConfig{}
+	if err := cfgMover.Parse(*configFile); err != nil {
+		log.Fatalf("Could not load mover config from %q: %v", *configFile, err)
+	}
+	mv := mover.New(cfgMover.Mover)
 
 	enc, err := crypt.New(cfg.AESPassphrase)
 	if err != nil {
@@ -83,6 +88,10 @@ func main() {
 		}
 	}
 	for {
+		if _, err := mv.Scan(*dryRun); err != nil {
+			log.Printf("Could not perform moves: %v", err)
+		}
+
 		changedEntries := 0
 		for src, dst := range cfg.Dirs {
 			changed, err := m.Update(src)

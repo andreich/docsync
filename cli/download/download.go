@@ -39,8 +39,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create decryption: %v", err)
 	}
-	log.Printf("Decrypting with passphrase: %q", cfg.AESPassphrase)
-
 	log.Printf("Downloading %q to %q", *filename, *destination)
 
 	ctx := context.Background()

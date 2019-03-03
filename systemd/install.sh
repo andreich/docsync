@@ -11,7 +11,7 @@ fi
 sudo tee /etc/systemd/system/docsync-${USER}.service <<EOF
 [Unit]
 Description=docsync service - http://github.com/andreich/docsync
-After=network.target
+After=network-online.target
 StartLimitIntervalSec=0
 
 [Service]

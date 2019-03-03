@@ -1,17 +1,15 @@
 #!/bin/bash
 MODE=count
-GOVER=`which gover`
-REPORT="go tool cover -html=gover.coverprofile"
+PROFILE=gover.coverprofile
+REPORT="go tool cover -html=${PROFILE}"
 if [[ $1 == "travis-ci" ]]; then
-  GOVER=$HOME/gopath/bin/gover
   GOVERALLS=$HOME/gopath/bin/goveralls
-  REPORT="$GOVERALLS -service=travis-ci -repotoken=${COVERALLS_TOKEN} -coverprofile=gover.coverprofile"
+  REPORT="$GOVERALLS -service=travis-ci -repotoken=${COVERALLS_TOKEN} -coverprofile=${PROFILE}"
 fi
 
-go test ./... -covermode=$MODE -coverprofile=gover.coverprofile
-
-if [[ ! -z "$GOVER" ]]; then
-  $GOVER
-fi
+rm ${PROFILE}
+go test ./... -covermode=$MODE -coverprofile=${PROFILE}
 
 $REPORT 
+ls -l ${PROFILE}
+cat ${PROFILE}

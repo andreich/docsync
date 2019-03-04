@@ -12,7 +12,7 @@ Google Cloud Console the [Google Storage JSON API](https://cloud.google.com/stor
 and [Stackdriver Monitoring API](https://cloud.google.com/monitoring/api/enable-api)
 and have a service account with the [*Storage Object Creator*](https://cloud.google.com/iam/docs/understanding-roles#storage-roles),
 *Storage Object Viewer* and [*Monitoring Metric Writer*](https://cloud.google.com/monitoring/access-control)
- metric roles.
+ roles.
 
 ```sh
 $ go install http://github.com/andreich/docsync/cli/docsync
@@ -28,7 +28,7 @@ $ systemctl start docsync-${USER}
     "aes_passphrase": "-- password --",
     "bucket_name": "-- bucket --",
     "credentials": {
-        -- copy paste the content from Google credentials JSON file -- 
+        "-- copy paste the content from Google credentials JSON file -- "
     },
     "dirs": {
         "-- local directory --": "-- remote directory --"

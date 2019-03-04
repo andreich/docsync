@@ -31,6 +31,7 @@ func main() {
 		if _, err := m.Scan(*dryRun); err != nil {
 			log.Fatal(err)
 		}
+		log.Printf("Sleeping %v", *interval)
 		time.Sleep(*interval)
 	}
 }

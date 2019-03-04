@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -16,17 +18,24 @@ import (
 	"github.com/andreich/docsync/manifest"
 	"github.com/andreich/docsync/mover"
 	"github.com/andreich/docsync/storage"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
 )
 
 var (
 	configFile = flag.String("config", "$HOME/.docsync/config.json", "The configuration file to read.")
-	dryRun     = flag.Bool("dry_run", true, "If true, just print the moves, don't carry them on.")
+	dryRun     = flag.Bool("dry_run", true, "Simulate running but don't write anything to storage.")
+	port       = flag.Int("port", 9871, "Port on which to expose metrics about the run.")
 )
 
 func uploadContent(ctx context.Context, s storage.Storage, enc crypt.Encryption, dst string, data []byte) error {
 	data, err := enc.Encrypt(data)
 	if err != nil {
 		return err
+	}
+	if *dryRun {
+		log.Printf("dry run: uploading to %s (%d bytes)", dst, len(data))
+		return nil
 	}
 	return s.Upload(ctx, dst, data)
 }
@@ -43,6 +52,18 @@ func main() {
 	flag.Parse()
 	*configFile = os.ExpandEnv(*configFile)
 	log.Printf("Started with config: %s", *configFile)
+
+	if *port > 0 {
+		go func() {
+			mux := http.NewServeMux()
+			if err := setupPrometheusExport(mux); err != nil {
+				log.Printf("Could not set up Prometheus export: %v", err)
+			}
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), mux); err != nil {
+				log.Fatalf("Could not set up HTTP server: %v", err)
+			}
+		}()
+	}
 
 	cfg := &config.Sync{}
 	if err := cfg.Parse(*configFile); err != nil {
@@ -67,6 +88,16 @@ func main() {
 	s, err := storage.New(ctx, cfg.BucketName, creds)
 	if err != nil {
 		log.Fatalf("Could not initialize storage: %v", err)
+	}
+
+	if err := setupStackdriverExport(cfg.Credentials["project_id"], creds); err != nil {
+		log.Printf("Could not set up Stackdriver export: %v", err)
+	}
+
+	view.SetReportingPeriod(cfg.Interval.Duration / 2)
+
+	if err := registerViews(); err != nil {
+		log.Fatalf("Could not set up view for monitoring: %v", err)
 	}
 
 	m := manifest.New(cfg.Include, cfg.Exclude)
@@ -96,7 +127,7 @@ func main() {
 		for src, dst := range cfg.Dirs {
 			changed, err := m.Update(src)
 			if err != nil {
-				log.Printf("Breaking main loop due to error: %v", err)
+				log.Printf("Breaking update loop due to error: %v", err)
 				break
 			}
 			for _, e := range changed {
@@ -104,10 +135,11 @@ func main() {
 				dstfn := strings.Replace(e, src, dst, 1)
 				if err := upload(ctx, s, enc, e, dstfn); err != nil {
 					log.Printf("Could not upload %q to %q: %v", e, dstfn, err)
+					stats.Record(ctx, uploadedFilesErrCounter.M(1))
 				}
+				stats.Record(ctx, uploadedFilesCounter.M(1))
 			}
 		}
-		log.Printf("Changed entries %d; Sleeping %v", changedEntries, cfg.Interval)
 		if changedEntries > 0 {
 			var buf bytes.Buffer
 			if err := m.Dump(&buf); err != nil {
@@ -118,6 +150,7 @@ func main() {
 				log.Printf("Could not upload %q to %q: %v", cfg.ManifestFile, cfg.RemoteManifestFile, err)
 			}
 		}
+		log.Printf("Changed entries %d; Sleeping %v", changedEntries, cfg.Interval)
 		time.Sleep(cfg.Interval.Duration)
 	}
 }

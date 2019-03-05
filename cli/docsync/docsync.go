@@ -50,6 +50,13 @@ func upload(ctx context.Context, s storage.Storage, enc crypt.Encryption, srcfil
 
 func main() {
 	flag.Parse()
+	ctx := context.Background()
+
+	tctx, _ := context.WithTimeout(ctx, 10*time.Minute)
+	if err := waitForInternetAccess(tctx); err != nil {
+		log.Fatalf("No internet access available: %v", err)
+	}
+
 	*configFile = os.ExpandEnv(*configFile)
 	log.Printf("Started with config: %s", *configFile)
 
@@ -80,7 +87,6 @@ func main() {
 		log.Fatalf("Could not set up encryption/decryption with passphrase %q: %v", cfg.AESPassphrase, err)
 	}
 
-	ctx := context.Background()
 	creds, err := json.Marshal(cfg.Credentials)
 	if err != nil {
 		log.Fatalf("Could not serialize credentials: %v", err)

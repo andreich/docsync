@@ -86,6 +86,16 @@ func (m *M) alreadySeen(filename string, modified time.Time) (bool, error) {
 	return false, nil
 }
 
+func doMoveFile(to, file string) error {
+	if _, err := osStat(to); os.IsNotExist(err) {
+		if err := os.Rename(file, to); err != nil {
+			return fmt.Errorf("moving %q to %q: %v", file, to, err)
+		}
+		return nil
+	}
+	return fmt.Errorf("moving %q to %q: declined as destination already exists", file, to)
+}
+
 func doMove(moves map[string][]string, dryRun bool) error {
 	for dst, files := range moves {
 		for _, file := range files {
@@ -94,12 +104,8 @@ func doMove(moves map[string][]string, dryRun bool) error {
 				log.Printf("%q -> %q", file, to)
 				continue
 			}
-			if _, err := osStat(to); os.IsNotExist(err) {
-				if err := os.Rename(file, to); err != nil {
-					return fmt.Errorf("moving %q to %q: %v", file, to, err)
-				}
-			} else {
-				return fmt.Errorf("moving %q to %q: declined as destination already exists", file, to)
+			if err := doMoveFile(to, file); err != nil {
+				log.Printf("E: %v", err)
 			}
 		}
 	}
